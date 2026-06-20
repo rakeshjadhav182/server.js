@@ -7,28 +7,20 @@ const server = http.createServer(app);
 const io = new Server(server, {
     cors: { origin: "*" } 
 });
-
+// 
+const MONGO_URI = 'mongodb+srv://rakeshjadhav182:roziwin182@cluster0.zh6ang4.mongodb.net/?appName=Cluster0';
 let timeLeft = 10;
 let systemColor = "GREEN";
 let systemNumber = 0;
 
-// एडमिन द्वारा फिक्स किए गए रिजल्ट्स
-let forcedColor = null;
-let forcedNumber = null;
-
+// हर 1 सेकंड में चलने वाला सेंट्रलाइज्ड टाइमर
 setInterval(() => {
     timeLeft--;
 
     if (timeLeft <= 0) {
         const colors = ['GREEN', 'RED', 'VIOLET'];
-        
-        // अगर एडमिन ने सेट किया है तो वही आएगा, नहीं तो रैंडम
-        systemColor = forcedColor || colors[Math.floor(Math.random() * colors.length)];
-        systemNumber = (forcedNumber !== null) ? forcedNumber : Math.floor(Math.random() * 10);
-
-        // अगले राउंड के लिए चीट रीसेट
-        forcedColor = null;
-        forcedNumber = null;
+        systemColor = colors[Math.floor(Math.random() * colors.length)];
+        systemNumber = Math.floor(Math.random() * 10);
 
         io.emit('game-result', { color: systemColor, number: systemNumber });
         timeLeft = 10; 
@@ -38,21 +30,11 @@ setInterval(() => {
 }, 1000);
 
 io.on('connection', (socket) => {
-    console.log('खिलाड़ी जुड़ा: ' + socket.id);
-
-    // एडमिन से आने वाले कमांड्स सुनना
-    socket.on('admin-force-color', (color) => {
-        forcedColor = color;
-        console.log(`Admin forced Color: ${color}`);
-    });
-
-    socket.on('admin-force-number', (num) => {
-        forcedNumber = parseInt(num);
-        console.log(`Admin forced Number: ${num}`);
-    });
+    console.log('एक नया खिलाड़ी जुड़ा: ' + socket.id);
 });
 
+// Render के लिए पोर्ट को डायनामिक रखना जरूरी है
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`सर्वर चालू पोर्ट: ${PORT}`);
+    console.log(`सर्वर चालू हो गया है पोर्ट: ${PORT}`);
 });
