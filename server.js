@@ -12,14 +12,23 @@ let timeLeft = 10;
 let systemColor = "GREEN";
 let systemNumber = 0;
 
-// हर 1 सेकंड में चलने वाला सेंट्रलाइज्ड टाइमर
+// एडमिन द्वारा फिक्स किए गए रिजल्ट्स
+let forcedColor = null;
+let forcedNumber = null;
+
 setInterval(() => {
     timeLeft--;
 
     if (timeLeft <= 0) {
         const colors = ['GREEN', 'RED', 'VIOLET'];
-        systemColor = colors[Math.floor(Math.random() * colors.length)];
-        systemNumber = Math.floor(Math.random() * 10);
+        
+        // अगर एडमिन ने सेट किया है तो वही आएगा, नहीं तो रैंडम
+        systemColor = forcedColor || colors[Math.floor(Math.random() * colors.length)];
+        systemNumber = (forcedNumber !== null) ? forcedNumber : Math.floor(Math.random() * 10);
+
+        // अगले राउंड के लिए चीट रीसेट
+        forcedColor = null;
+        forcedNumber = null;
 
         io.emit('game-result', { color: systemColor, number: systemNumber });
         timeLeft = 10; 
@@ -29,11 +38,21 @@ setInterval(() => {
 }, 1000);
 
 io.on('connection', (socket) => {
-    console.log('एक नया खिलाड़ी जुड़ा: ' + socket.id);
+    console.log('खिलाड़ी जुड़ा: ' + socket.id);
+
+    // एडमिन से आने वाले कमांड्स सुनना
+    socket.on('admin-force-color', (color) => {
+        forcedColor = color;
+        console.log(`Admin forced Color: ${color}`);
+    });
+
+    socket.on('admin-force-number', (num) => {
+        forcedNumber = parseInt(num);
+        console.log(`Admin forced Number: ${num}`);
+    });
 });
 
-// Render के लिए पोर्ट को डायनामिक रखना जरूरी है
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-    console.log(`सर्वर चालू हो गया है पोर्ट: ${PORT}`);
+    console.log(`सर्वर चालू पोर्ट: ${PORT}`);
 });
